@@ -56,14 +56,24 @@ nav button b{font-size:20px;line-height:1.2;font-weight:400}
 nav button.on{background:none;color:var(--acc);font-weight:600}
 nav .bg{position:absolute;top:0;left:calc(50% + 8px);background:var(--bad);color:#fff;border-radius:9px;min-width:18px;font-size:11px;line-height:18px;padding:0 4px}
 nav .bg:empty{display:none}
-#scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6}
-#panel{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:680px;max-height:80vh;overflow:auto;border-radius:16px 16px 0 0;z-index:7;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
-[data-vis="space"] #panel{background:#12143a}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:29}
+#panel,#isheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:680px;max-height:80vh;overflow:auto;border-radius:16px 16px 0 0;z-index:30;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+[data-vis="space"] #panel,[data-vis="space"] #isheet{background:#12143a}
 .rg{fill:none;stroke-width:2.4;stroke-linecap:round}
 .stat{fill:none;stroke-width:2.5;display:none}.cc .stat{display:block}
 .ok .stat,.ok .rg{stroke:var(--ok)}.warn .stat,.warn .rg{stroke:var(--warn)}.bad .stat,.bad .rg{stroke:var(--bad)}
 .swb{width:28px;height:28px;padding:0;border-radius:50%}.swb.status{width:auto;padding:0 10px;border-radius:10px;font-size:13px}
 .swb[aria-pressed="true"]{outline:2px solid var(--fg);outline-offset:2px}
+#sky{aspect-ratio:1;touch-action:pan-y}
+#stage{position:relative}
+#zc{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:2}
+#zc button{width:38px;height:38px;padding:0;background:var(--card);opacity:.92}
+#stage.full{position:fixed;inset:0;z-index:20;margin:0;border-radius:0;border:0;padding:0;background:var(--bg)}
+#stage.full #sky{width:100%;height:100%;max-width:none;aspect-ratio:auto;touch-action:none}
+#stage.full #zc{top:calc(10px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px))}
+#stage.full #empty{position:absolute;left:12px;bottom:12px}
+[data-vis="space"] #stage.full{background:radial-gradient(ellipse at 50% 30%,#1d1f5c,#05060f 80%)}
+label.ck{display:flex;align-items:center;gap:8px;color:var(--fg);font-size:15px}label.ck>*{display:inline-block;width:auto;margin:0}
 </style></head>
 <body><main>
 <h1>Орбита 🪐</h1>
@@ -73,7 +83,7 @@ nav .bg:empty{display:none}
 <button id="m1" class="on">Дни без общения</button><button id="m2">Относительно моей цели</button>
 <button id="v1" class="on">Спокойная тема</button><button id="v2">Космос</button>
 <button id="an">Остановить движение</button></div>
-<div class="card"><svg id="sky" viewBox="0 0 600 600" role="img" aria-label="Орбиты контактов"></svg>
+<div class="card" id="stage"><svg id="sky" viewBox="0 0 600 600" role="img" aria-label="Орбиты контактов"></svg><div id="zc"><button id="zi" aria-label="Приблизить">＋</button><button id="zo" aria-label="Отдалить">－</button><button id="zr" aria-label="Сбросить вид">⟲</button><button id="fs" aria-label="На весь экран">⛶</button></div>
 <p id="empty" class="mut" hidden>Пока никого нет. Добавьте человека ниже или <button id="demo" class="ghost">посмотрите на примере</button></p></div>
 </section>
 <section class="tab" id="t-today"><div class="card"><b>Сегодня</b><div id="today"></div></div>
@@ -81,14 +91,33 @@ nav .bg:empty{display:none}
 <section class="tab" id="t-add"><div class="card"><b>Добавить человека</b>
 <div class="row"><input type="text" id="nm" placeholder="Имя" maxlength="40"></div>
 <div class="grid"><label>Важность<select id="ai"></select></label><label>Хочу общаться<select id="ae"></select></label>
-<label>Последний контакт<input type="date" id="ld"></label><label>&nbsp;<button class="pri" id="add">Добавить</button></label></div></div></section>
-<section class="tab" id="t-backup"><div class="card"><b>Резервная копия</b>
+<label>Последний контакт<input type="date" id="ld"></label><label>&nbsp;<button class="pri" id="add">Добавить</button></label></div></div>
+<div class="card"><b>Импорт контактов</b>
+<p class="mut">Загрузите файл .vcf (его можно выгрузить из «Контактов» на iPhone и Android или из Google Контактов) и отметьте, кого добавить. На Android в Chrome есть ещё прямой выбор из контактов телефона.</p>
+<div class="row"><button id="ipick" hidden>Из контактов телефона</button><button id="ivcf">Из файла .vcf</button><input type="file" id="ivf" accept=".vcf,text/vcard,text/x-vcard,text/directory" hidden></div><p class="mut" id="imsg"></p></div></section>
+<section class="tab" id="t-backup"><div class="card"><b>Уведомления</b>
+<p class="mut">Напоминание приходит не чаще раза в день. Приложение проверяет список, когда вы его открываете, а на Android в установленном приложении иногда и в фоне. Точное время выбрать нельзя. На iPhone в фоне уведомления без сервера не работают.</p>
+<div class="row"><button id="nt">Включить уведомления</button><button class="ghost" id="ntt">Проверить</button></div>
+<label class="ck"><input type="checkbox" id="ntd"><span>Напоминать, кому пора написать</span></label>
+<label class="ck"><input type="checkbox" id="ntb"><span>Напоминать о днях рождения</span></label>
+<p class="mut" id="nts"></p></div>
+<div class="card"><b>Резервная копия</b>
 <p class="mut">Список хранится только на этом устройстве. Скачивайте копию время от времени и храните её в iCloud Drive или Google Drive.</p>
-<div class="row"><button id="exp">Скачать копию</button><button id="imp">Загрузить копию</button><button class="ghost" id="clr">Очистить всё</button>
-<input type="file" id="file" accept=".json,application/json" hidden></div></div></section>
+<p class="mut" id="lx"></p><div class="row"><button id="exp">Скачать копию</button><button id="shr" hidden>Отправить копию…</button><button id="imp">Загрузить копию</button><button class="ghost" id="clr">Очистить всё</button>
+<input type="file" id="file" accept=".json,application/json" hidden></div></div>
+<div class="card"><b>Автокопии на этом устройстве</b><p class="mut">Раз в день при открытии приложение запоминает состояние списка. Они лежат в том же хранилище браузера, поэтому от очистки данных не спасут: для этого нужна копия в файл.</p><div id="snaps"></div></div></section>
 </main>
 <div id="scrim" hidden></div><div class="card" id="panel" hidden></div>
-<nav id="tabs"><button data-t="t-orbit" class="on"><b>🪐</b>Орбиты</button><button data-t="t-today"><b>✅</b>Сегодня<span class="bg" id="tb"></span></button><button data-t="t-add"><b>➕</b>Добавить</button><button data-t="t-backup"><b>💾</b>Копия</button></nav>
+<div class="card" id="isheet" hidden>
+<div class="row" style="margin:0"><h3 style="margin:0">Импорт контактов</h3><button class="ghost" id="ix" style="margin-left:auto">Закрыть</button></div>
+<p class="mut">Отметьте тех, кого хотите отслеживать. Остальных добавлять не нужно.</p>
+<input type="text" id="iq" placeholder="Поиск по имени" style="width:100%">
+<div class="row"><button class="ghost" id="isa">Выбрать всех</button><button class="ghost" id="isn">Снять выбор</button><span class="mut" id="ic"></span></div>
+<div id="il" style="max-height:34vh;overflow:auto;margin-top:6px"></div>
+<div class="grid"><label>Важность<select id="ii"></select></label><label>Хочу общаться<select id="ie"></select></label>
+<label>Последний контакт<select id="i0"><option value="0">сегодня</option><option value="7">неделю назад</option><option value="30">месяц назад</option><option value="90">3 месяца назад</option><option value="180">полгода назад</option></select></label>
+<label>&nbsp;<button class="pri" id="iadd">Добавить выбранных</button></label></div></div>
+<nav id="tabs"><button data-t="t-orbit" class="on"><b>🪐</b>Орбиты</button><button data-t="t-today"><b>✅</b>Сегодня<span class="bg" id="tb"></span></button><button data-t="t-add"><b>➕</b>Добавить</button><button data-t="t-backup"><b>⚙️</b>Настройки</button></nav>
 <script>
 const EV=[[7,"раз в неделю"],[14,"раз в 2 недели"],[30,"раз в месяц"],[90,"раз в 3 месяца"],[180,"раз в полгода"]];
 const IMP=[[1,"Ближний круг",15],[2,"Близкие",12],[3,"Приятели",9],[4,"Знакомые",7]];
@@ -112,7 +141,7 @@ const impOf=p=>IMP.find(i=>i[0]===p.imp)||IMP[2];
 const opts=(arr,cur)=>arr.map(a=>'<option value="'+a[0]+'"'+(a[0]===cur?" selected":"")+">"+a[1]+"</option>").join("");
 function bdIn(p){if(!p.bd)return 99;const[,m,d]=p.bd.split("-").map(Number),n=new Date(),z=new Date(n.getFullYear(),n.getMonth(),n.getDate());let t=new Date(n.getFullYear(),m-1,d);if(t<z)t=new Date(n.getFullYear()+1,m-1,d);return Math.round((t-z)/864e5)}
 const DRE=/^\d{4}-\d{2}-\d{2}$/;
-const clean=l=>(Array.isArray(l)?l:[]).filter(p=>p&&p.name&&DRE.test(p.last)).map(p=>({id:String(p.id||rid()),name:String(p.name).slice(0,40),every:+p.every>0?+p.every:30,imp:[1,2,3,4].includes(+p.imp)?+p.imp:3,last:p.last,a:+p.a||Math.random()*6.283,notes:String(p.notes||"").slice(0,2000),ask:String(p.ask||"").slice(0,200),bd:DRE.test(p.bd||"")?p.bd:"",color:/^#[0-9a-f]{6}$/i.test(p.color||"")?p.color:"",shape:SHAPES.some(x=>x[0]===p.shape)?p.shape:"circle",hist:(Array.isArray(p.hist)?p.hist:[]).slice(-50).map(h=>({d:String(h.d||"").slice(0,10),t:String(h.t||"").slice(0,20),n:String(h.n||"").slice(0,200)}))}));
+const clean=l=>(Array.isArray(l)?l:[]).filter(p=>p&&p.name&&DRE.test(p.last)).map(p=>({id:String(p.id||rid()),name:String(p.name).slice(0,40),every:+p.every>0?+p.every:30,imp:[1,2,3,4].includes(+p.imp)?+p.imp:3,last:p.last,a:+p.a||Math.random()*6.283,notes:String(p.notes||"").slice(0,2000),ask:String(p.ask||"").slice(0,200),bd:DRE.test(p.bd||"")?p.bd:"",color:/^#[0-9a-f]{6}$/i.test(p.color||"")?p.color:"",shape:SHAPES.some(x=>x[0]===p.shape)?p.shape:"circle",tel:String(p.tel||"").slice(0,30),nick:String(p.nick||"").slice(0,40),hist:(Array.isArray(p.hist)?p.hist:[]).slice(-50).map(h=>({d:String(h.d||"").slice(0,10),t:String(h.t||"").slice(0,20),n:String(h.n||"").slice(0,200)}))}));
 
 /* storage: IndexedDB, localStorage as fallback */
 const idbOpen=()=>new Promise((res,rej)=>{const r=indexedDB.open("orbit",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
@@ -129,7 +158,7 @@ function base(){
   svg=$("#sky");nodes={};
   svg.innerHTML='<defs><radialGradient id="sunG" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#fff2b0"/><stop offset=".5" stop-color="#ffb938"/><stop offset="1" stop-color="#e8641a"/></radialGradient><radialGradient id="glowG"><stop offset="0" stop-color="#ffb938" stop-opacity=".55"/><stop offset="1" stop-color="#ffb938" stop-opacity="0"/></radialGradient><radialGradient id="shade" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient></defs><g class="stars"></g>';
   let s=7;const rnd=()=>(s=(s*16807)%2147483647)/2147483647,gS=svg.querySelector(".stars");
-  for(let i=0;i<90;i++)el("circle",{cx:rnd()*600,cy:rnd()*600,r:.4+rnd()*1.1,opacity:.25+rnd()*.7,fill:"#fff"},gS);
+  for(let i=0;i<260;i++)el("circle",{cx:rnd()*2400-900,cy:rnd()*2400-900,r:.4+rnd()*1.1,opacity:.25+rnd()*.7,fill:"#fff"},gS);
   (set.mode==="days"?[[7,"неделя"],[14,"2 нед."],[30,"месяц"],[90,"3 мес."],[180,"6 мес.+"]]:[[0.5,"½ срока"],[1,"срок"],[2,"×2"],[3,"×3+"]]).forEach(([v,l])=>{
     const r=radius(v);el("circle",{class:"ring",cx:C,cy:C,r},svg);const t=el("text",{class:"rl",x:C,y:C-r+12},svg);t.textContent=l});
   el("circle",{class:"glow",cx:C,cy:C,r:86},svg);el("circle",{class:"sun",cx:C,cy:C,r:34},svg);
@@ -151,7 +180,7 @@ function render(){
     n.tr=target(p);
     n.g.setAttribute("class","pl "+status(p)+(sel===p.id?" sel":"")+(bdIn(p)<=7?" bd":"")+(p.color?" cc":""));
     const rad=impOf(p)[2];
-    const sh=p.shape||"circle",d=shapePath(sh,rad),a=rad*1.9,b=rad*.6;
+    n.rad=rad;const sh=p.shape||"circle",d=shapePath(sh,rad),a=rad*1.9,b=rad*.6;
     n.body.setAttribute("d",d);n.shine.setAttribute("d",d);n.body.style.fill=p.color||"";
     n.halo.setAttribute("r",rad+5);n.stat.setAttribute("r",rad+3.5);n.t.setAttribute("y",rad+13);
     n.rb.setAttribute("d","M"+-a+" 0A"+a+" "+b+" 0 0 1 "+a+" 0");n.rf.setAttribute("d","M"+-a+" 0A"+a+" "+b+" 0 0 0 "+a+" 0");
@@ -160,10 +189,11 @@ function render(){
   }
   place();panel();list();renderToday();$("#empty").hidden=people.length>0;
 }
-function place(){for(const id in nodes){const n=nodes[id];n.g.setAttribute("transform","translate("+(C+n.cr*Math.cos(n.ph)).toFixed(1)+","+(C+n.cr*Math.sin(n.ph)).toFixed(1)+")")}}
+function place(){const k=Math.pow(vz,-.75).toFixed(3);for(const id in nodes){const n=nodes[id];n.g.setAttribute("transform","translate("+(C+n.cr*Math.cos(n.ph)).toFixed(1)+","+(C+n.cr*Math.sin(n.ph)).toFixed(1)+") scale("+k+")")}}
 let last=performance.now();
 function tick(t){const dt=Math.min(0.05,(t-last)/1000);last=t;
-  for(const id in nodes){const n=nodes[id];n.cr+=(n.tr-n.cr)*Math.min(1,dt*4);if(set.anim)n.ph+=dt*0.12/(n.cr/100+0.3)}
+  for(const id in nodes){const n=nodes[id];n.cr+=(n.tr-n.cr)*Math.min(1,dt*4);if(set.anim)n.ph+=dt*0.05}
+  relax();
   place();requestAnimationFrame(tick)}
 
 /* panels */
@@ -176,6 +206,7 @@ function renderToday(){
   people.filter(p=>bdIn(p)<=7).sort((a,b)=>bdIn(a)-bdIn(b)).forEach(p=>{const b=bdIn(p);T.append(row(p,"🎂 "+(b===0?"день рождения сегодня":"день рождения через "+b+" дн."))); k++});
   [...people].filter(p=>ratio(p)>=0.7).sort((a,b)=>ratio(b)-ratio(a)).slice(0,3).forEach(p=>{T.append(row(p,agoText(daysSince(p.last))+(p.ask?". Спросить: "+p.ask:""))); k++});
   $("#tb").textContent=k||"";if(!k){const m=document.createElement("p");m.className="mut";m.textContent=people.length?"Сегодня никому писать не нужно.":"Добавьте людей, и здесь появятся подсказки.";T.append(m)}
+  if(people.length&&(!set.lastExport||daysSince(set.lastExport)>14)){const r=document.createElement("div");r.className="li";r.textContent="💾 Давно не сохраняли копию в файл. Нажмите, чтобы сохранить.";r.onclick=()=>showTab("t-backup");T.append(r)}
 }
 function list(){
   const L=$("#list");L.textContent="";
@@ -184,11 +215,11 @@ function list(){
 }
 function panel(){
   const p=people.find(x=>x.id===sel),b=$("#panel");
-  if(!p){b.hidden=true;$("#scrim").hidden=true;b.textContent="";return}
+  if(!p){b.hidden=true;$("#scrim").hidden=$("#isheet").hidden;b.textContent="";return}
   b.hidden=false;$("#scrim").hidden=false;
   const d=daysSince(p.last);
   b.innerHTML='<div class="row" style="margin:0"><h3 style="margin:0">'+esc(p.name)+'</h3><button class="ghost" id="cls" style="margin-left:auto">Закрыть</button></div><p class="mut">Последний контакт: '+agoText(d)+'. Цель: '+everyText(p.every)+'.</p>'+
-  '<div class="grid"><label>Важность<select id="pi">'+opts(IMP,p.imp)+'</select></label><label>Хочу общаться<select id="pe">'+opts(EV,p.every)+'</select></label>'+
+  '<div class="grid"><label style="grid-column:1/-1">Имя<input type="text" id="pnm" maxlength="40" value="'+esc(p.name)+'"></label><label>Телефон<input type="tel" id="pt" maxlength="30" value="'+esc(p.tel)+'"></label><label>Ник в мессенджере<input type="text" id="pk" maxlength="40" value="'+esc(p.nick)+'"></label></div><div class="grid"><label>Важность<select id="pi">'+opts(IMP,p.imp)+'</select></label><label>Хочу общаться<select id="pe">'+opts(EV,p.every)+'</select></label>'+
   '<label>Последний контакт<input type="date" id="pl" value="'+p.last+'" max="'+today()+'"></label><label>День рождения<input type="date" id="pb" value="'+p.bd+'"></label></div>'+
   '<label>Форма планеты<select id="ps">'+opts(SHAPES,p.shape||"circle")+'</select></label><div class="row" id="pc"><span class="mut">Цвет</span><button class="swb status" data-c="" aria-pressed="'+(!p.color)+'">по статусу</button>'+COLORS.map(c=>'<button class="swb" data-c="'+c+'" style="background:'+c+'" aria-label="Цвет '+c+'" aria-pressed="'+(p.color===c)+'"></button>').join("")+'</div><p class="mut" style="font-size:12px;margin:2px 0 0">Если выбран свой цвет, статус показывает тонкое кольцо вокруг планеты.</p><div class="row"><select id="ht">'+TYPES.map(t=>"<option>"+t+"</option>").join("")+'</select><input type="text" id="hn" maxlength="200" placeholder="О чём говорили (необязательно)"><button class="pri" id="talk">Пообщались</button></div>'+
   '<label>О чём спросить в следующий раз<input type="text" id="pa" maxlength="200" value="'+esc(p.ask)+'"></label>'+
@@ -196,7 +227,7 @@ function panel(){
   '<div>'+p.hist.slice(-5).reverse().map(h=>'<div class="h"><b>'+esc(fmtD(h.d))+'</b> '+esc(h.t)+(h.n?": "+esc(h.n):"")+'</div>').join("")+'</div>'+
   '<div class="row"><button class="ghost" id="del">Удалить человека</button></div>';
   const on=(id,fn)=>$("#"+id).addEventListener("change",e=>{fn(e.target.value);save();render()});
-  on("ps",v=>p.shape=v);$("#pc").onclick=e=>{const b=e.target.closest("button[data-c]");if(b){p.color=b.dataset.c;save();render()}};on("pi",v=>p.imp=+v);on("pe",v=>p.every=+v);on("pl",v=>{if(v)p.last=v>today()?today():v});on("pb",v=>p.bd=v);on("pa",v=>p.ask=v.trim());on("pn",v=>p.notes=v);
+  on("pnm",v=>{if(v.trim())p.name=v.trim().slice(0,40)});on("pt",v=>p.tel=v.trim());on("pk",v=>p.nick=v.trim());on("ps",v=>p.shape=v);$("#pc").onclick=e=>{const b=e.target.closest("button[data-c]");if(b){p.color=b.dataset.c;save();render()}};on("pi",v=>p.imp=+v);on("pe",v=>p.every=+v);on("pl",v=>{if(v)p.last=v>today()?today():v});on("pb",v=>p.bd=v);on("pa",v=>p.ask=v.trim());on("pn",v=>p.notes=v);
   $("#cls").onclick=()=>{sel=null;render()};
   $("#talk").onclick=()=>{p.hist=p.hist.concat({d:today(),t:$("#ht").value,n:$("#hn").value.trim()}).slice(-50);p.last=today();sel=null;save();render()};
   $("#del").onclick=()=>{if(confirm("Удалить «"+p.name+"»?")){people=people.filter(x=>x!==p);sel=null;save();render()}};
@@ -209,6 +240,7 @@ function applyView(){
   $("#v1").classList.toggle("on",set.vis==="calm");$("#v2").classList.toggle("on",set.vis==="space");
   $("#an").textContent=set.anim?"Остановить движение":"Запустить движение";
   $("#sky").classList.toggle("stopped",!set.anim);
+  const nt=set.nt;$("#nt").textContent=nt.on?"Уведомления включены":"Включить уведомления";$("#nt").classList.toggle("on",nt.on);$("#ntd").checked=nt.due;$("#ntb").checked=nt.bd;
 }
 function setMode(m){set.mode=m;const c=Object.fromEntries(Object.entries(nodes).map(([k,n])=>[k,[n.cr,n.ph]]));base();applyView();render();for(const k in c)if(nodes[k]){nodes[k].cr=c[k][0];nodes[k].ph=c[k][1]};save()}
 function add(){
@@ -216,34 +248,148 @@ function add(){
   const p=clean([{id:rid(),name,every:+$("#ae").value,imp:+$("#ai").value,last:$("#ld").value||today()}])[0];
   people.push(p);$("#nm").value="";$("#nm").focus();const ab=$("#add");ab.textContent="Добавлено";setTimeout(()=>ab.textContent="Добавить",1200);save();render();
 }
-function showTab(id){sel=null;render();document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("on",s.id===id));document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===id));scrollTo(0,0)}
+let cand=[],full=false,vz=1,vx=C,vy=C,moved=false,pd=0;const ptr=new Map();
+const NA="Этот браузер не поддерживает уведомления. На iPhone они доступны только в приложении, добавленном на экран «Домой» (iOS 16.4 и новее).";
+const DENY="Уведомления запрещены. Разрешите их для этого сайта в настройках браузера или телефона.";
+const vw=()=>{const k=$("#sky"),w=k.clientWidth||600,h=k.clientHeight||600;return 600/vz*Math.max(1,w/h)};
+function view(){const k=$("#sky"),w=k.clientWidth||600,h=k.clientHeight||600,W=vw(),H=W*h/w;k.setAttribute("viewBox",(vx-W/2)+" "+(vy-H/2)+" "+W+" "+H)}
+function zoomAt(f,px,py){const r=$("#sky").getBoundingClientRect();if(!r.width)return;const W=vw(),H=W*r.height/r.width,fx=px==null?.5:(px-r.left)/r.width,fy=py==null?.5:(py-r.top)/r.height,wx=vx+(fx-.5)*W,wy=vy+(fy-.5)*H;vz=Math.min(10,Math.max(.5,vz*f));const W2=vw(),H2=W2*r.height/r.width;vx=wx-(fx-.5)*W2;vy=wy-(fy-.5)*H2;view()}
+function setFull(f){full=f;$("#stage").classList.toggle("full",f);document.body.style.overflow=f?"hidden":"";$("#fs").textContent=f?"✕":"⛶";$("#fs").setAttribute("aria-label",f?"Закрыть":"На весь экран");vz=1;vx=vy=C;ptr.clear();view();requestAnimationFrame(view)}
+function relax(){const k=Math.pow(vz,-.75),a=Object.values(nodes);
+  for(let i=0;i<a.length;i++)for(let j=i+1;j<a.length;j++){const u=a[i],v=a[j],m=(u.rad+v.rad+4)*k;
+    if(Math.abs(u.cr-v.cr)>m)continue;
+    const dd=Math.hypot(u.cr*Math.cos(u.ph)-v.cr*Math.cos(v.ph),u.cr*Math.sin(u.ph)-v.cr*Math.sin(v.ph));
+    if(dd>=m)continue;
+    const o=(m-dd)*.3,sg=Math.sin(u.ph-v.ph)>=0?1:-1;u.ph+=sg*o/u.cr;v.ph-=sg*o/v.cr}}
+const pdist=()=>{const a=[...ptr.values()];return a.length<2?0:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)};
+function closeSheets(){sel=null;$("#isheet").hidden=true;render()}
+
+/* vCard import */
+const qp=v=>{try{const b=[];v.replace(/=([0-9A-F]{2})|([^=])/gi,(m,h,c)=>{b.push(h?parseInt(h,16):c.charCodeAt(0));return""});return new TextDecoder().decode(new Uint8Array(b))}catch(e){return v}};
+function parseVcf(t){
+  t=t.replace(/\r/g,"").replace(/=\n/g,"").replace(/\n[ \t]/g,"");
+  return t.split(/BEGIN:VCARD/i).slice(1).map(c=>{let fn="",nn="",tel="",nick="",bd="";
+    c.split("\n").forEach(l=>{const m=l.match(/^(?:[\w-]+\.)?(FN|N|TEL|BDAY|NICKNAME)((?:;[^:]*)?):(.*)$/i);if(!m)return;
+      const k=m[1].toUpperCase();let v=m[3].trim();if(/QUOTED-PRINTABLE/i.test(m[2]))v=qp(v);v=v.replace(/\\([,;])/g,"$1");
+      if(k==="FN")fn=v;else if(k==="N"){const q=v.split(";");nn=[q[1],q[0]].filter(Boolean).join(" ")}
+      else if(k==="TEL"&&!tel)tel=v;else if(k==="NICKNAME")nick=v;
+      else if(k==="BDAY"){const d=v.replace(/[-:]/g,"");if(/^\d{8}/.test(d))bd=d.slice(0,4)+"-"+d.slice(4,6)+"-"+d.slice(6,8);else if(/^\d{4}$/.test(d))bd="2000-"+d.slice(0,2)+"-"+d.slice(2,4)}});
+    return{name:(fn||nn).trim().slice(0,40),tel,nick,bd}}).filter(c=>c.name);
+}
+const match=c=>c.name.toLowerCase().includes($("#iq").value.trim().toLowerCase());
+function openImport(list){const have=new Set(people.map(p=>p.name.toLowerCase()));
+  cand=list.map(c=>({...c,dup:have.has(c.name.toLowerCase()),on:false}));$("#iq").value="";renderImport();$("#isheet").hidden=false;$("#scrim").hidden=false}
+function renderImport(){const L=$("#il");L.textContent="";
+  cand.forEach(c=>{if(!match(c))return;const r=document.createElement("div");r.className="li";
+    const cb=document.createElement("input");cb.type="checkbox";cb.checked=c.on;cb.disabled=c.dup;cb.style.width="auto";
+    const s=document.createElement("span");s.textContent=c.name+(c.dup?" (уже есть)":"");r.append(cb,s);
+    r.onclick=e=>{if(c.dup)return;c.on=e.target===cb?cb.checked:!c.on;cb.checked=c.on;cnt()};L.append(r)});cnt()}
+function cnt(){$("#ic").textContent="Выбрано: "+cand.filter(c=>c.on&&!c.dup).length+" из "+cand.length}
+
+/* auto snapshots (inside the same browser storage) */
+async function snap(label){if(!idb)return;
+  try{const s=(await idbGet("snaps"))||[],t=today();
+    if(!label&&(!people.length||s.some(x=>x.d===t&&!x.l)))return;
+    s.push({d:t,ts:Date.now(),l:label||"",n:people.length,data:{people,set}});await idbSet("snaps",s.slice(-10))}catch(e){}
+  renderSnaps()}
+async function renderSnaps(){const L=$("#snaps");if(!L)return;L.textContent="";let s=[];
+  try{s=idb?(await idbGet("snaps"))||[]:[]}catch(e){}
+  if(!s.length){L.innerHTML='<p class="mut">Пока нет копий.</p>';return}
+  [...s].reverse().forEach(x=>{const r=document.createElement("div");r.className="li";
+    const a=document.createElement("span");a.textContent=fmtD(x.d)+(x.l?" ("+x.l+")":"")+", "+x.n+" чел.";
+    const b=document.createElement("button");b.className="ghost";b.style.marginLeft="auto";b.textContent="Восстановить";
+    b.onclick=async()=>{if(!confirm("Вернуть список на "+fmtD(x.d)+"? Текущий будет сохранён в автокопиях."))return;
+      await snap("перед восстановлением");people=clean(x.data.people);sel=null;save();render()};
+    r.append(a,b);L.append(r)})}
+const showLx=()=>{$("#lx").textContent=set.lastExport?"Последняя копия в файл: "+fmtD(set.lastExport)+" ("+agoText(daysSince(set.lastExport))+").":"Копия в файл ещё не сохранялась."};
+
+/* notifications */
+function dueMsg(){const n=set.nt,b=n.bd?people.filter(p=>bdIn(p)===0).map(p=>p.name):[],d=n.due?people.filter(p=>ratio(p)>=1).sort((x,y)=>ratio(y)-ratio(x)):[],t=[];
+  if(b.length)t.push("🎂 День рождения: "+b.join(", "));
+  if(d.length)t.push("Пора написать: "+d.slice(0,5).map(p=>p.name).join(", ")+(d.length>5?" и ещё "+(d.length-5):""));
+  return t.join("\n")}
+async function notifyCheck(test){const st=$("#nts");
+  if(!("Notification" in window)){if(test)st.textContent=NA;return}
+  if(test&&Notification.permission==="default")await Notification.requestPermission();
+  if(Notification.permission!=="granted"){if(test)st.textContent=DENY;return}
+  if(!test&&!set.nt.on)return;
+  const t=today();if(!test){let l=null;try{l=await idbGet("notified")}catch(e){}if(l===t)return}
+  const m=test?"Так будут выглядеть напоминания.":dueMsg();if(!m)return;
+  const o={body:m,icon:"icon-192.png",badge:"icon-192.png",tag:"orbit"};
+  try{const r=await navigator.serviceWorker.getRegistration();if(r)await r.showNotification("Орбита",o);else new Notification("Орбита",o)}catch(e){return}
+  if(!test&&idb)idbSet("notified",t).catch(()=>{})}
+async function regPeriodic(on){try{const r=await navigator.serviceWorker.ready;if(!r.periodicSync)return;if(on)await r.periodicSync.register("orbit-check",{minInterval:12*36e5});else await r.periodicSync.unregister("orbit-check")}catch(e){}}
+
+function init2(){
+  const sk=$("#sky");
+  $("#zi").onclick=()=>zoomAt(1.4);$("#zo").onclick=()=>zoomAt(1/1.4);$("#zr").onclick=()=>{vz=1;vx=vy=C;view()};$("#fs").onclick=()=>setFull(!full);
+  addEventListener("resize",view);
+  sk.addEventListener("wheel",e=>{if(!full)return;e.preventDefault();zoomAt(e.deltaY<0?1.15:1/1.15,e.clientX,e.clientY)},{passive:false});
+  sk.addEventListener("pointerdown",e=>{if(!full)return;ptr.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});if(ptr.size===1)moved=false;pd=pdist()});
+  sk.addEventListener("pointermove",e=>{const o=ptr.get(e.pointerId);if(!full||!o)return;const dx=e.clientX-o.x,dy=e.clientY-o.y;o.x=e.clientX;o.y=e.clientY;
+    if(ptr.size>=2){const d=pdist(),a=[...ptr.values()];if(pd)zoomAt(d/pd,(a[0].x+a[1].x)/2,(a[0].y+a[1].y)/2);pd=d;moved=true}
+    else{if(Math.hypot(e.clientX-o.sx,e.clientY-o.sy)>6)moved=true;if(moved){const k=vw()/sk.clientWidth;vx-=dx*k;vy-=dy*k;view()}}});
+  const up=e=>{ptr.delete(e.pointerId);pd=pdist()};sk.addEventListener("pointerup",up);sk.addEventListener("pointercancel",up);
+  /* import */
+  $("#ipick").hidden=!("contacts" in navigator&&"ContactsManager" in window);
+  $("#ii").innerHTML=opts(IMP,3);$("#ie").innerHTML=opts(EV,30);
+  $("#ivcf").onclick=()=>$("#ivf").click();
+  $("#ivf").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const l=parseVcf(await f.text());
+    if(!l.length){$("#imsg").textContent="В файле не нашлось контактов. Нужен файл .vcf.";return}openImport(l)};
+  $("#ipick").onclick=async()=>{try{const r=await navigator.contacts.select(["name","tel"],{multiple:true});
+    const l=r.filter(c=>c.name&&c.name[0]).map(c=>({name:String(c.name[0]).slice(0,40),tel:(c.tel||[])[0]||"",nick:"",bd:""}));if(l.length)openImport(l)}catch(x){}};
+  $("#iq").oninput=renderImport;
+  $("#isa").onclick=()=>{cand.forEach(c=>{if(!c.dup&&match(c))c.on=true});renderImport()};
+  $("#isn").onclick=()=>{cand.forEach(c=>c.on=false);renderImport()};$("#ix").onclick=closeSheets;
+  $("#iadd").onclick=()=>{const l=cand.filter(c=>c.on&&!c.dup);if(!l.length)return;
+    l.forEach(c=>people.push(clean([{id:rid(),name:c.name,tel:c.tel,nick:c.nick,bd:c.bd,every:+$("#ie").value,imp:+$("#ii").value,last:ago(+$("#i0").value)}])[0]));
+    $("#imsg").textContent="Добавлено: "+l.length;save();closeSheets()};
+  /* backup */
+  const mk=()=>new File([JSON.stringify({v:1,people,set})],"orbit-backup-"+today()+".json",{type:"application/json"});
+  try{if(navigator.canShare&&navigator.canShare({files:[mk()]}))$("#shr").hidden=false}catch(e){}
+  $("#shr").onclick=async()=>{try{await navigator.share({files:[mk()],title:"Копия Орбиты"});set.lastExport=today();save();showLx();renderToday()}catch(e){}};
+  showLx();
+  /* notifications */
+  $("#nt").onclick=async()=>{const st=$("#nts");
+    if(set.nt.on){set.nt.on=false;st.textContent="";regPeriodic(false)}
+    else{if(!("Notification" in window)){st.textContent=NA;return}
+      let pm=Notification.permission;if(pm==="default")pm=await Notification.requestPermission();
+      if(pm!=="granted"){st.textContent=DENY;return}
+      set.nt.on=true;st.textContent="";regPeriodic(true);notifyCheck()}
+    save();applyView()};
+  $("#ntd").onchange=e=>{set.nt.due=e.target.checked;save()};$("#ntb").onchange=e=>{set.nt.bd=e.target.checked;save()};
+  $("#ntt").onclick=()=>notifyCheck(true);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden){snap();notifyCheck()}});
+}
+function showTab(id){sel=null;render();document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("on",s.id===id));document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===id));scrollTo(0,0);if(id==="t-backup")renderSnaps()}
 function init(){
   $("#tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-t]");if(b)showTab(b.dataset.t)});
-  $("#scrim").onclick=()=>{sel=null;render()};
-  addEventListener("keydown",e=>{if(e.key==="Escape"&&sel){sel=null;render()}});
+  $("#scrim").onclick=closeSheets;
+  addEventListener("keydown",e=>{if(e.key!=="Escape")return;if(sel||!$("#isheet").hidden)closeSheets();else if(full)setFull(false)});
   $("#ai").innerHTML=opts(IMP,3);$("#ae").innerHTML=opts(EV,30);$("#ld").value=today();$("#ld").max=today();
-  base();applyView();render();requestAnimationFrame(tick);
-  $("#sky").addEventListener("click",e=>{const g=e.target.closest("g[data-id]");if(g){sel=g.dataset.id;render()}});
+  base();applyView();view();render();requestAnimationFrame(tick);init2();
+  $("#sky").addEventListener("click",e=>{if(moved){moved=false;return}const g=e.target.closest("g[data-id]");if(g){sel=g.dataset.id;render()}});
   $("#m1").onclick=()=>setMode("days");$("#m2").onclick=()=>setMode("rel");
   $("#v1").onclick=()=>{set.vis="calm";applyView();save()};$("#v2").onclick=()=>{set.vis="space";applyView();save()};
   $("#an").onclick=()=>{set.anim=!set.anim;applyView();save()};
   $("#add").onclick=add;$("#nm").onkeydown=e=>{if(e.key==="Enter")add()};
   $("#demo").onclick=()=>{[["Аня",3,14,1],["Макс",40,30,2],["Оля",20,14,3],["Дима",75,90,3],["Катя",200,90,2],["Игорь",9,7,4]].forEach(([n,d,e,i])=>people.push(clean([{id:rid(),name:n,every:e,imp:i,last:ago(d)}])[0]));save();render()};
-  $("#exp").onclick=()=>{const b=new Blob([JSON.stringify({v:1,people,set})],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="orbit-backup-"+today()+".json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000)};
+  $("#exp").onclick=()=>{const b=new Blob([JSON.stringify({v:1,people,set})],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="orbit-backup-"+today()+".json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000);set.lastExport=today();save();showLx();renderToday()};
   $("#imp").onclick=()=>$("#file").click();
   $("#file").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
     try{const d=JSON.parse(await f.text()),l=clean(d.people);if(!Array.isArray(d.people))throw 0;
-      if(confirm("Заменить текущий список ("+people.length+") списком из копии ("+l.length+")?")){people=l;sel=null;save();render()}}
+      if(confirm("Заменить текущий список ("+people.length+") списком из копии ("+l.length+")?")){await snap("перед загрузкой копии");people=l;sel=null;save();render()}}
     catch(x){alert("Не удалось прочитать файл. Нужна копия, скачанная из этого приложения.")}};
-  $("#clr").onclick=()=>{if(people.length&&confirm("Удалить всех? Лучше сначала скачать копию.")){people=[];sel=null;save();render()}};
+  $("#clr").onclick=async()=>{if(people.length&&confirm("Удалить всех? Лучше сначала скачать копию.")){await snap("перед очисткой");people=[];sel=null;save();render()}};
 }
 (async()=>{
   let data=null;
   try{idb=await idbOpen();data=await idbGet("data")}catch(e){idb=null}
   if(!data){try{data=JSON.parse(localStorage.getItem(KEY))}catch(e){}}
   if(data){people=clean(data.people);Object.assign(set,data.set||{})}
+  set.nt=Object.assign({on:false,due:true,bd:true},set.nt);
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
-  init();
+  init();snap();notifyCheck();
 })();
 if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script></body></html>
