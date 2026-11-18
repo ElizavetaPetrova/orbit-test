@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Орбита</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#4b4fd8">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Орбита">
+<style>
+:root{--bg:#eef1f6;--fg:#171a2b;--mut:#626880;--card:#fff;--line:#cfd5e3;--acc:#4b4fd8;--ok:#2a9d6a;--warn:#d38a1f;--bad:#d03f4a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#10121f;--fg:#eceef8;--mut:#9aa0bd;--card:#191c30;--line:#33385a;--acc:#8b8ff2;--ok:#45c28c;--warn:#f0b04a;--bad:#f2707a;color-scheme:dark}}
+:root[data-vis="space"]{--bg:#070816;--fg:#eef0ff;--mut:#a3a9d4;--card:rgba(18,20,50,.74);--line:#2f346c;--acc:#7c6cff;--ok:#4fd6a0;--warn:#ffc15a;--bad:#ff7482;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+[data-vis="space"] body{background:radial-gradient(ellipse at 50% -10%,#1d1f5c 0,#0b0c26 45%,#05060f 100%) fixed}
+main{max-width:680px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+h1{font-size:24px;margin:4px 0 2px}h3{margin:0 0 4px;font-size:17px}
+.mut{color:var(--mut);margin:4px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:12px}
+svg{display:block;width:100%;height:auto;max-width:640px;margin:0 auto}
+.seg{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+button,input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;max-width:100%}
+button{cursor:pointer}button.on,button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button.ghost{color:var(--mut)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+label{display:block;color:var(--mut);font-size:13px;margin-top:8px}label>*{display:block;width:100%;margin-top:3px;color:var(--fg)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.row input[type=text]{flex:1 1 140px;min-width:0}
+.li{display:flex;align-items:center;gap:10px;padding:8px 4px;border-top:1px solid var(--line);cursor:pointer}
+.li:first-child{border-top:0}.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.li .r{margin-left:auto;color:var(--mut);font-size:13px;text-align:right}
+.h{font-size:13px;color:var(--mut);margin-top:4px}.h b{color:var(--fg)}
+.ring{fill:none;stroke:var(--line);stroke-dasharray:3 5}
+.rl{font:10px system-ui,sans-serif;fill:var(--mut);text-anchor:middle}
+.stars,.glow,.shine{display:none}.shine{pointer-events:none}
+[data-vis="space"] .stars{display:block}[data-vis="space"] .glow{display:block;fill:url(#glowG)}[data-vis="space"] .shine{display:block;fill:url(#shade)}
+.sun{fill:var(--acc)}[data-vis="space"] .sun{fill:url(#sunG)}
+.sunT{fill:#fff;font:600 18px system-ui,sans-serif;text-anchor:middle}[data-vis="space"] .sunT{fill:#4a2500}
+[data-vis="space"] .pl{filter:drop-shadow(0 0 5px rgba(255,255,255,.28))}
+.pl{cursor:pointer}.pl .body{stroke:var(--bg);stroke-width:2}.pl.bd .body{stroke:#f5c542;stroke-width:3}
+.ok .body{fill:var(--ok)}.warn .body{fill:var(--warn)}.bad .body{fill:var(--bad)}
+.halo{fill:none;stroke-width:2;opacity:0;transform-box:fill-box;transform-origin:center}
+.ok .halo{stroke:var(--ok)}.warn .halo{stroke:var(--warn)}.bad .halo{stroke:var(--bad);animation:pulse 2.2s ease-out infinite}
+.stopped .bad .halo{animation:none;opacity:.55}
+.pl.sel .halo{opacity:1;animation:none}
+@keyframes pulse{0%{opacity:.8;transform:scale(.8)}100%{opacity:0;transform:scale(1.5)}}
+.nm{font:11px system-ui,sans-serif;fill:var(--fg);pointer-events:none;paint-order:stroke;stroke:var(--bg);stroke-width:3px}
+[data-vis="space"] .nm{stroke:#070816}
+@media (prefers-reduced-motion:reduce){.bad .halo{animation:none;opacity:.55}}
+.tab{display:none}.tab.on{display:block}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;background:var(--card);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:5;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+nav button{flex:1;max-width:160px;display:flex;flex-direction:column;align-items:center;border:0;background:none;color:var(--mut);padding:4px 2px;font-size:12px;position:relative}
+nav button b{font-size:20px;line-height:1.2;font-weight:400}
+nav button.on{background:none;color:var(--acc);font-weight:600}
+nav .bg{position:absolute;top:0;left:calc(50% + 8px);background:var(--bad);color:#fff;border-radius:9px;min-width:18px;font-size:11px;line-height:18px;padding:0 4px}
+nav .bg:empty{display:none}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6}
+#panel{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:680px;max-height:80vh;overflow:auto;border-radius:16px 16px 0 0;z-index:7;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+[data-vis="space"] #panel{background:#12143a}
+.rg{fill:none;stroke-width:2.4;stroke-linecap:round}
+.stat{fill:none;stroke-width:2.5;display:none}.cc .stat{display:block}
+.ok .stat,.ok .rg{stroke:var(--ok)}.warn .stat,.warn .rg{stroke:var(--warn)}.bad .stat,.bad .rg{stroke:var(--bad)}
+.swb{width:28px;height:28px;padding:0;border-radius:50%}.swb.status{width:auto;padding:0 10px;border-radius:10px;font-size:13px}
+.swb[aria-pressed="true"]{outline:2px solid var(--fg);outline-offset:2px}
+</style></head>
+<body><main>
+<h1>Орбита 🪐</h1>
+<section class="tab on" id="t-orbit">
+<p class="mut">Чем дольше вы не общались с человеком, тем дальше его планета. Размер планеты показывает, насколько человек вам важен.</p>
+<div class="seg" id="bar">
+<button id="m1" class="on">Дни без общения</button><button id="m2">Относительно моей цели</button>
+<button id="v1" class="on">Спокойная тема</button><button id="v2">Космос</button>
+<button id="an">Остановить движение</button></div>
+<div class="card"><svg id="sky" viewBox="0 0 600 600" role="img" aria-label="Орбиты контактов"></svg>
+<p id="empty" class="mut" hidden>Пока никого нет. Добавьте человека ниже или <button id="demo" class="ghost">посмотрите на примере</button></p></div>
+</section>
+<section class="tab" id="t-today"><div class="card"><b>Сегодня</b><div id="today"></div></div>
+<div class="card"><b>Кому писать в первую очередь</b><div id="list"></div></div></section>
+<section class="tab" id="t-add"><div class="card"><b>Добавить человека</b>
+<div class="row"><input type="text" id="nm" placeholder="Имя" maxlength="40"></div>
+<div class="grid"><label>Важность<select id="ai"></select></label><label>Хочу общаться<select id="ae"></select></label>
+<label>Последний контакт<input type="date" id="ld"></label><label>&nbsp;<button class="pri" id="add">Добавить</button></label></div></div></section>
+<section class="tab" id="t-backup"><div class="card"><b>Резервная копия</b>
+<p class="mut">Список хранится только на этом устройстве. Скачивайте копию время от времени и храните её в iCloud Drive или Google Drive.</p>
+<div class="row"><button id="exp">Скачать копию</button><button id="imp">Загрузить копию</button><button class="ghost" id="clr">Очистить всё</button>
+<input type="file" id="file" accept=".json,application/json" hidden></div></div></section>
+</main>
+<div id="scrim" hidden></div><div class="card" id="panel" hidden></div>
+<nav id="tabs"><button data-t="t-orbit" class="on"><b>🪐</b>Орбиты</button><button data-t="t-today"><b>✅</b>Сегодня<span class="bg" id="tb"></span></button><button data-t="t-add"><b>➕</b>Добавить</button><button data-t="t-backup"><b>💾</b>Копия</button></nav>
+<script>
+const EV=[[7,"раз в неделю"],[14,"раз в 2 недели"],[30,"раз в месяц"],[90,"раз в 3 месяца"],[180,"раз в полгода"]];
+const IMP=[[1,"Ближний круг",15],[2,"Близкие",12],[3,"Приятели",9],[4,"Знакомые",7]];
+const TYPES=["Сообщение","Звонок","Встреча"];
+const SHAPES=[["circle","Круг"],["ring","С кольцом"],["star","Звезда"],["diamond","Ромб"],["heart","Сердце"]];
+const COLORS=["#e8645a","#f2a03d","#f2d04b","#4fc58a","#3fb6c9","#5b8def","#8b6cf0","#ec6fb0"];
+const KEY="orbit.data.v1",NS="http://www.w3.org/2000/svg",C=300,R0=58,R1=282;
+const $=s=>document.querySelector(s);
+let people=[],sel=null,set={vis:"calm",anim:!matchMedia("(prefers-reduced-motion: reduce)").matches,mode:"days"},nodes={},gP,svg,idb=null;
+const fmt=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const today=()=>fmt(new Date()),ago=n=>fmt(new Date(Date.now()-n*864e5));
+const daysSince=s=>Math.max(0,Math.round((Date.now()-new Date(s+"T00:00:00").getTime())/864e5));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const everyText=n=>(EV.find(e=>e[0]===n)||[0,"раз в "+n+" дн."])[1];
+const agoText=d=>d===0?"сегодня":d===1?"вчера":d+" дн. назад";
+const fmtD=s=>{const[y,m,d]=s.split("-");return d+"."+m};
+const ratio=p=>daysSince(p.last)/p.every;
+const status=p=>{const r=ratio(p);return r<0.7?"ok":r<1?"warn":"bad"};
+const impOf=p=>IMP.find(i=>i[0]===p.imp)||IMP[2];
+const opts=(arr,cur)=>arr.map(a=>'<option value="'+a[0]+'"'+(a[0]===cur?" selected":"")+">"+a[1]+"</option>").join("");
+function bdIn(p){if(!p.bd)return 99;const[,m,d]=p.bd.split("-").map(Number),n=new Date(),z=new Date(n.getFullYear(),n.getMonth(),n.getDate());let t=new Date(n.getFullYear(),m-1,d);if(t<z)t=new Date(n.getFullYear()+1,m-1,d);return Math.round((t-z)/864e5)}
+const DRE=/^\d{4}-\d{2}-\d{2}$/;
+const clean=l=>(Array.isArray(l)?l:[]).filter(p=>p&&p.name&&DRE.test(p.last)).map(p=>({id:String(p.id||rid()),name:String(p.name).slice(0,40),every:+p.every>0?+p.every:30,imp:[1,2,3,4].includes(+p.imp)?+p.imp:3,last:p.last,a:+p.a||Math.random()*6.283,notes:String(p.notes||"").slice(0,2000),ask:String(p.ask||"").slice(0,200),bd:DRE.test(p.bd||"")?p.bd:"",color:/^#[0-9a-f]{6}$/i.test(p.color||"")?p.color:"",shape:SHAPES.some(x=>x[0]===p.shape)?p.shape:"circle",hist:(Array.isArray(p.hist)?p.hist:[]).slice(-50).map(h=>({d:String(h.d||"").slice(0,10),t:String(h.t||"").slice(0,20),n:String(h.n||"").slice(0,200)}))}));
+
+/* storage: IndexedDB, localStorage as fallback */
+const idbOpen=()=>new Promise((res,rej)=>{const r=indexedDB.open("orbit",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const idbGet=k=>new Promise((res,rej)=>{const q=idb.transaction("kv").objectStore("kv").get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)});
+const idbSet=(k,v)=>new Promise((res,rej)=>{const t=idb.transaction("kv","readwrite");t.objectStore("kv").put(v,k);t.oncomplete=res;t.onerror=()=>rej(t.error)});
+function save(){const d={v:1,people,set},ls=()=>{try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}};if(idb)idbSet("data",d).catch(ls);else ls()}
+
+/* sky */
+const MAX=()=>set.mode==="days"?180:3;
+const radius=v=>R0+(R1-R0)*Math.sqrt(Math.min(v,MAX())/MAX());
+const target=p=>radius(set.mode==="days"?daysSince(p.last):ratio(p));
+function el(n,a,p){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function base(){
+  svg=$("#sky");nodes={};
+  svg.innerHTML='<defs><radialGradient id="sunG" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#fff2b0"/><stop offset=".5" stop-color="#ffb938"/><stop offset="1" stop-color="#e8641a"/></radialGradient><radialGradient id="glowG"><stop offset="0" stop-color="#ffb938" stop-opacity=".55"/><stop offset="1" stop-color="#ffb938" stop-opacity="0"/></radialGradient><radialGradient id="shade" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient></defs><g class="stars"></g>';
+  let s=7;const rnd=()=>(s=(s*16807)%2147483647)/2147483647,gS=svg.querySelector(".stars");
+  for(let i=0;i<90;i++)el("circle",{cx:rnd()*600,cy:rnd()*600,r:.4+rnd()*1.1,opacity:.25+rnd()*.7,fill:"#fff"},gS);
+  (set.mode==="days"?[[7,"неделя"],[14,"2 нед."],[30,"месяц"],[90,"3 мес."],[180,"6 мес.+"]]:[[0.5,"½ срока"],[1,"срок"],[2,"×2"],[3,"×3+"]]).forEach(([v,l])=>{
+    const r=radius(v);el("circle",{class:"ring",cx:C,cy:C,r},svg);const t=el("text",{class:"rl",x:C,y:C-r+12},svg);t.textContent=l});
+  el("circle",{class:"glow",cx:C,cy:C,r:86},svg);el("circle",{class:"sun",cx:C,cy:C,r:34},svg);
+  el("text",{class:"sunT",x:C,y:C+6},svg).textContent="Я";
+  gP=el("g",{},svg);
+}
+function shapePath(s,r){
+  if(s==="star"){let d="";for(let i=0;i<10;i++){const R=(i%2?0.5:1.2)*r,a=-Math.PI/2+i*Math.PI/5;d+=(i?"L":"M")+(R*Math.cos(a)).toFixed(1)+" "+(R*Math.sin(a)).toFixed(1)}return d+"Z"}
+  if(s==="diamond"){const k=1.2*r;return "M0 "+-k+"L"+(k*.85).toFixed(1)+" 0L0 "+k+"L"+(-k*.85).toFixed(1)+" 0Z"}
+  if(s==="heart"){const k=r*1.15,f=(x,y)=>(x*k).toFixed(1)+" "+(y*k).toFixed(1);
+    return "M"+f(0,.95)+"C"+f(-1.1,.25)+" "+f(-1.15,-.5)+" "+f(-.55,-.75)+"C"+f(-.2,-.9)+" "+f(0,-.65)+" "+f(0,-.45)+"C"+f(0,-.65)+" "+f(.2,-.9)+" "+f(.55,-.75)+"C"+f(1.15,-.5)+" "+f(1.1,.25)+" "+f(0,.95)+"Z"}
+  return "M"+r+" 0A"+r+" "+r+" 0 1 1 "+-r+" 0A"+r+" "+r+" 0 1 1 "+r+" 0Z"}
+function render(){
+  const ids=new Set(people.map(p=>p.id));
+  for(const id in nodes)if(!ids.has(id)){nodes[id].g.remove();delete nodes[id]}
+  for(const p of people){
+    let n=nodes[p.id];
+    if(!n){const g=el("g",{"data-id":p.id},gP);n=nodes[p.id]={g,halo:el("circle",{class:"halo"},g),stat:el("circle",{class:"stat"},g),rb:el("path",{class:"rg"},g),body:el("path",{class:"body"},g),shine:el("path",{class:"shine"},g),rf:el("path",{class:"rg"},g),t:el("text",{class:"nm","text-anchor":"middle"},g),cr:target(p),ph:p.a}}
+    n.tr=target(p);
+    n.g.setAttribute("class","pl "+status(p)+(sel===p.id?" sel":"")+(bdIn(p)<=7?" bd":"")+(p.color?" cc":""));
+    const rad=impOf(p)[2];
+    const sh=p.shape||"circle",d=shapePath(sh,rad),a=rad*1.9,b=rad*.6;
+    n.body.setAttribute("d",d);n.shine.setAttribute("d",d);n.body.style.fill=p.color||"";
+    n.halo.setAttribute("r",rad+5);n.stat.setAttribute("r",rad+3.5);n.t.setAttribute("y",rad+13);
+    n.rb.setAttribute("d","M"+-a+" 0A"+a+" "+b+" 0 0 1 "+a+" 0");n.rf.setAttribute("d","M"+-a+" 0A"+a+" "+b+" 0 0 0 "+a+" 0");
+    [n.rb,n.rf].forEach(e=>{e.setAttribute("transform","rotate(-20)");e.style.display=sh==="ring"?"":"none";e.style.stroke=p.color||""});
+    n.t.textContent=p.name.length>9?p.name.slice(0,8)+"…":p.name;
+  }
+  place();panel();list();renderToday();$("#empty").hidden=people.length>0;
+}
+function place(){for(const id in nodes){const n=nodes[id];n.g.setAttribute("transform","translate("+(C+n.cr*Math.cos(n.ph)).toFixed(1)+","+(C+n.cr*Math.sin(n.ph)).toFixed(1)+")")}}
+let last=performance.now();
+function tick(t){const dt=Math.min(0.05,(t-last)/1000);last=t;
+  for(const id in nodes){const n=nodes[id];n.cr+=(n.tr-n.cr)*Math.min(1,dt*4);if(set.anim)n.ph+=dt*0.12/(n.cr/100+0.3)}
+  place();requestAnimationFrame(tick)}
+
+/* panels */
+function row(p,txt,onclick){const r=document.createElement("div");r.className="li";
+  const dot=document.createElement("span");dot.className="dot";dot.style.background="var(--"+status(p)+")";
+  const nm=document.createElement("span");nm.textContent=p.name;
+  const x=document.createElement("span");x.className="r";x.textContent=txt;r.append(dot,nm,x);r.onclick=()=>{sel=p.id;render()};return r}
+function renderToday(){
+  const T=$("#today");T.textContent="";let k=0;
+  people.filter(p=>bdIn(p)<=7).sort((a,b)=>bdIn(a)-bdIn(b)).forEach(p=>{const b=bdIn(p);T.append(row(p,"🎂 "+(b===0?"день рождения сегодня":"день рождения через "+b+" дн."))); k++});
+  [...people].filter(p=>ratio(p)>=0.7).sort((a,b)=>ratio(b)-ratio(a)).slice(0,3).forEach(p=>{T.append(row(p,agoText(daysSince(p.last))+(p.ask?". Спросить: "+p.ask:""))); k++});
+  $("#tb").textContent=k||"";if(!k){const m=document.createElement("p");m.className="mut";m.textContent=people.length?"Сегодня никому писать не нужно.":"Добавьте людей, и здесь появятся подсказки.";T.append(m)}
+}
+function list(){
+  const L=$("#list");L.textContent="";
+  [...people].sort((a,b)=>ratio(b)-ratio(a)).forEach(p=>{const d=daysSince(p.last),diff=Math.abs(p.every-d);
+    L.append(row(p,agoText(d)+", "+(d>=p.every?"просрочено на "+diff+" дн.":"ещё "+diff+" дн."))) });
+}
+function panel(){
+  const p=people.find(x=>x.id===sel),b=$("#panel");
+  if(!p){b.hidden=true;$("#scrim").hidden=true;b.textContent="";return}
+  b.hidden=false;$("#scrim").hidden=false;
+  const d=daysSince(p.last);
+  b.innerHTML='<div class="row" style="margin:0"><h3 style="margin:0">'+esc(p.name)+'</h3><button class="ghost" id="cls" style="margin-left:auto">Закрыть</button></div><p class="mut">Последний контакт: '+agoText(d)+'. Цель: '+everyText(p.every)+'.</p>'+
+  '<div class="grid"><label>Важность<select id="pi">'+opts(IMP,p.imp)+'</select></label><label>Хочу общаться<select id="pe">'+opts(EV,p.every)+'</select></label>'+
+  '<label>Последний контакт<input type="date" id="pl" value="'+p.last+'" max="'+today()+'"></label><label>День рождения<input type="date" id="pb" value="'+p.bd+'"></label></div>'+
+  '<label>Форма планеты<select id="ps">'+opts(SHAPES,p.shape||"circle")+'</select></label><div class="row" id="pc"><span class="mut">Цвет</span><button class="swb status" data-c="" aria-pressed="'+(!p.color)+'">по статусу</button>'+COLORS.map(c=>'<button class="swb" data-c="'+c+'" style="background:'+c+'" aria-label="Цвет '+c+'" aria-pressed="'+(p.color===c)+'"></button>').join("")+'</div><p class="mut" style="font-size:12px;margin:2px 0 0">Если выбран свой цвет, статус показывает тонкое кольцо вокруг планеты.</p><div class="row"><select id="ht">'+TYPES.map(t=>"<option>"+t+"</option>").join("")+'</select><input type="text" id="hn" maxlength="200" placeholder="О чём говорили (необязательно)"><button class="pri" id="talk">Пообщались</button></div>'+
+  '<label>О чём спросить в следующий раз<input type="text" id="pa" maxlength="200" value="'+esc(p.ask)+'"></label>'+
+  '<label>Заметки<textarea id="pn" rows="3" maxlength="2000">'+esc(p.notes)+'</textarea></label>'+
+  '<div>'+p.hist.slice(-5).reverse().map(h=>'<div class="h"><b>'+esc(fmtD(h.d))+'</b> '+esc(h.t)+(h.n?": "+esc(h.n):"")+'</div>').join("")+'</div>'+
+  '<div class="row"><button class="ghost" id="del">Удалить человека</button></div>';
+  const on=(id,fn)=>$("#"+id).addEventListener("change",e=>{fn(e.target.value);save();render()});
+  on("ps",v=>p.shape=v);$("#pc").onclick=e=>{const b=e.target.closest("button[data-c]");if(b){p.color=b.dataset.c;save();render()}};on("pi",v=>p.imp=+v);on("pe",v=>p.every=+v);on("pl",v=>{if(v)p.last=v>today()?today():v});on("pb",v=>p.bd=v);on("pa",v=>p.ask=v.trim());on("pn",v=>p.notes=v);
+  $("#cls").onclick=()=>{sel=null;render()};
+  $("#talk").onclick=()=>{p.hist=p.hist.concat({d:today(),t:$("#ht").value,n:$("#hn").value.trim()}).slice(-50);p.last=today();sel=null;save();render()};
+  $("#del").onclick=()=>{if(confirm("Удалить «"+p.name+"»?")){people=people.filter(x=>x!==p);sel=null;save();render()}};
+}
+
+/* controls */
+function applyView(){
+  document.documentElement.dataset.vis=set.vis;
+  $("#m1").classList.toggle("on",set.mode==="days");$("#m2").classList.toggle("on",set.mode==="rel");
+  $("#v1").classList.toggle("on",set.vis==="calm");$("#v2").classList.toggle("on",set.vis==="space");
+  $("#an").textContent=set.anim?"Остановить движение":"Запустить движение";
+  $("#sky").classList.toggle("stopped",!set.anim);
+}
+function setMode(m){set.mode=m;const c=Object.fromEntries(Object.entries(nodes).map(([k,n])=>[k,[n.cr,n.ph]]));base();applyView();render();for(const k in c)if(nodes[k]){nodes[k].cr=c[k][0];nodes[k].ph=c[k][1]};save()}
+function add(){
+  const name=$("#nm").value.trim();if(!name)return;
+  const p=clean([{id:rid(),name,every:+$("#ae").value,imp:+$("#ai").value,last:$("#ld").value||today()}])[0];
+  people.push(p);$("#nm").value="";$("#nm").focus();const ab=$("#add");ab.textContent="Добавлено";setTimeout(()=>ab.textContent="Добавить",1200);save();render();
+}
+function showTab(id){sel=null;render();document.querySelectorAll(".tab").forEach(s=>s.classList.toggle("on",s.id===id));document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===id));scrollTo(0,0)}
+function init(){
+  $("#tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-t]");if(b)showTab(b.dataset.t)});
+  $("#scrim").onclick=()=>{sel=null;render()};
+  addEventListener("keydown",e=>{if(e.key==="Escape"&&sel){sel=null;render()}});
+  $("#ai").innerHTML=opts(IMP,3);$("#ae").innerHTML=opts(EV,30);$("#ld").value=today();$("#ld").max=today();
+  base();applyView();render();requestAnimationFrame(tick);
+  $("#sky").addEventListener("click",e=>{const g=e.target.closest("g[data-id]");if(g){sel=g.dataset.id;render()}});
+  $("#m1").onclick=()=>setMode("days");$("#m2").onclick=()=>setMode("rel");
+  $("#v1").onclick=()=>{set.vis="calm";applyView();save()};$("#v2").onclick=()=>{set.vis="space";applyView();save()};
+  $("#an").onclick=()=>{set.anim=!set.anim;applyView();save()};
+  $("#add").onclick=add;$("#nm").onkeydown=e=>{if(e.key==="Enter")add()};
+  $("#demo").onclick=()=>{[["Аня",3,14,1],["Макс",40,30,2],["Оля",20,14,3],["Дима",75,90,3],["Катя",200,90,2],["Игорь",9,7,4]].forEach(([n,d,e,i])=>people.push(clean([{id:rid(),name:n,every:e,imp:i,last:ago(d)}])[0]));save();render()};
+  $("#exp").onclick=()=>{const b=new Blob([JSON.stringify({v:1,people,set})],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="orbit-backup-"+today()+".json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000)};
+  $("#imp").onclick=()=>$("#file").click();
+  $("#file").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+    try{const d=JSON.parse(await f.text()),l=clean(d.people);if(!Array.isArray(d.people))throw 0;
+      if(confirm("Заменить текущий список ("+people.length+") списком из копии ("+l.length+")?")){people=l;sel=null;save();render()}}
+    catch(x){alert("Не удалось прочитать файл. Нужна копия, скачанная из этого приложения.")}};
+  $("#clr").onclick=()=>{if(people.length&&confirm("Удалить всех? Лучше сначала скачать копию.")){people=[];sel=null;save();render()}};
+}
+(async()=>{
+  let data=null;
+  try{idb=await idbOpen();data=await idbGet("data")}catch(e){idb=null}
+  if(!data){try{data=JSON.parse(localStorage.getItem(KEY))}catch(e){}}
+  if(data){people=clean(data.people);Object.assign(set,data.set||{})}
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  init();
+})();
+if("serviceWorker" in navigator)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script></body></html>
